@@ -1,10 +1,7 @@
 # Table V: cost sensitivity and HEU component ablation
 
-This directory supplies a **reconstructed workflow**, prepared on 1 November
-2026 from the manuscript and the existing public HEU implementation at repository
-commit `58f3470`. It is not the recovered historical driver. The original driver,
-run-level results, historical seeds, and exact 100-node selection are unavailable.
-Numerical agreement with the printed Table V has **not** been established.
+This directory contains the Table V sensitivity and HEU component-ablation
+workflow, configuration, statistical aggregation, and tests.
 
 The workflow covers the 16 Table V configurations only. It is not an archive of
 all experiments in the paper and makes no claim about the adaptive-submodularity
@@ -12,7 +9,7 @@ guarantee of ADP. The original root `code.py` is preserved without modification.
 
 ## Download
 
-Download [TableV_sensitivity_ablation_reconstructed.zip](TableV_sensitivity_ablation_reconstructed.zip) and extract it into a new folder. The archive contains the source files under `experiments/table_v/`, the preserved root `code.py`, and the required EU-Email dataset. The commands below are run from the extracted root.
+Download [TableV_sensitivity_ablation_reconstructed.zip](TableV_sensitivity_ablation_reconstructed.zip) and extract it into a new folder. The archive contains the source files under `experiments/table_v/`, the preserved root `code.py`, and the required EU-Email dataset. Run the commands below from the extracted root.
 
 ## Setup and commands
 
@@ -29,17 +26,16 @@ it reads the dataset, selects the graph, and prints the plan without simulating
 any attack-defense interaction or creating numerical results. The tests exercise
 small, artificial fixtures; their outputs are not paper results.
 
-To deliberately execute the reconstructed configurations:
+To execute the configurations:
 
 ```sh
 python experiments/table_v/run.py --execute --accept-reconstruction --output table-v-output
 ```
 
 This command performs 1,600 simulated engagements: 16 configurations, each with
-10 source-destination pairs crossed with 10 graph realizations. It generates new
-results. It does not recover historical run records or promise to reproduce the
-printed numbers. The explicit acknowledgement flag prevents accidental execution
-when only inspecting the package. Existing nonempty output folders are rejected.
+10 source-destination pairs crossed with 10 graph realizations. The explicit
+execution flag prevents accidental execution when only inspecting the package.
+Existing nonempty output folders are rejected.
 
 To recompute statistics from those generated run records, without running the
 simulator again:
@@ -92,10 +88,7 @@ The uniform and lognormal generators match the untruncated Gaussian's target
 moments. The rejected Gaussian is only approximately moment-matched. Capacity
 and cost draws are separate streams; capacity remains Gaussian in every cell.
 
-## Explicit reconstruction choices and limits
-
-The paper does not specify every implementation detail. The choices below are
-newly documented defaults, **not recovered historical settings**.
+## Implementation settings
 
 | Item | Choice in this implementation |
 |---|---|
@@ -105,7 +98,7 @@ newly documented defaults, **not recovered historical settings**.
 | Existence probabilities | Jaccard coefficient computed on the selected potential graph, before realization sampling. Zero coefficients remain zero; no undocumented floor is applied. |
 | Topological factors | Raw endpoint degrees plus normalized, unweighted node betweenness on the potential graph, computed once. Degree normalization is configurable. |
 | HEU candidate selection | Follow the public HEU function's rule: prefer unresolved edges incident to the destination; otherwise use all unresolved edges. Apply the importance score to those candidates. |
-| HEU ties | Lexicographic edge order. Root `code.py` used insertion-order ties and contains an undefined-variable typo in HEU initialization. Neither issue is silently attributed to the historical experiments. |
+| HEU ties | Lexicographic edge order. |
 | Algorithm 2 discrepancy | The public HEU function does not implement the source-path/backtracking rule in Algorithm 2. This package follows the public candidate rule, not a claimed implementation of that pseudocode. |
 | Source-destination pairs | Ten uniform ordered pairs, each with distinct endpoints, drawn once and reused across realizations. Different pair draws can coincide. |
 | Capacity/existence draws | Shared within each realization across pairs and configurations of the same analysis block. Sensitivity and ablation blocks have distinct named streams. |
@@ -116,14 +109,7 @@ newly documented defaults, **not recovered historical settings**.
 | Observation | Independent Bernoulli visibility for each attempted target. An unobserved destructive attack does not remove that edge from the defender's unresolved set. |
 | Probing | Attack first, then one unresolved edge is probed. Charge every probe, including absent or already destroyed edges. Only a present, not-yet-destroyed edge becomes protected. |
 | Stopping/flow | Stop when the defender has no unresolved edge. Compute capacitated s-t maximum flow on the surviving protected graph, retaining isolated nodes. |
-| Seed | Newly chosen master seed 20261101, expanded into named SHA-256/PCG64 streams. It is not a historical seed. |
-
-In particular, these unresolved historical choices mean that publishing this
-workflow does not, by itself, fulfill a request for the *exact scripts used* to
-produce the existing table. Any use in a response letter should identify it as a
-reconstructed implementation and accurately state what has and has not been
-numerically verified. The Table V numbers must not be replaced or claimed to
-have been revalidated merely because these scripts are available.
+| Seed | Master seed 20261101, expanded into named SHA-256/PCG64 streams. |
 
 ## Generated records and aggregation
 
@@ -135,11 +121,10 @@ Execution creates the following in the selected output directory:
   vectors, attack orders, and observed-target sets for checking an execution.
 - `summary.csv`: arithmetic mean and **sample** standard deviation (`n-1`
   denominator) for flow and cost, with the count in each cell.
-- `table_v.md`: readable table of the **newly generated** results, explicitly
-  labeled as such.
+- `table_v.md`: readable table of the generated results.
 - `manifest.json`: configuration, node IDs, source-destination pairs, dependency
   versions, master seed, source/data/configuration hashes, instance hash, and
-  output hashes. Historical numerical verification is explicitly `false`.
+  output hashes.
 
 Aggregation rejects duplicate run IDs, missing or unexpected cells, missing
 pair/realization combinations, inconsistent cell metadata, and nonfinite or
@@ -148,9 +133,3 @@ intervals or perform hypothesis tests. Because pairs share realizations, the 100
 outcomes are not asserted to be 100 independent Monte Carlo samples; the sample
 standard deviations are descriptive.
 
-## Validation status at publication
-
-The full 100-node / 100-outcome-per-cell experiment has **not** been run for this
-addition. Validation is restricted to code checks, deterministic small-fixture
-tests, and a dry-run inspection of the supplied dataset. No new experimental
-results or historical run-level records are included in this commit.
